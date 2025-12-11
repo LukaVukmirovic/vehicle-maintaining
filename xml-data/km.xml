@@ -1,0 +1,22 @@
+<kilometers>
+    <km id="1">
+        <date>20250416</date>
+        <value>136000</value>
+    </km>
+    <km id="2">
+        <date>20250527</date>
+        <value>137654</value>
+    </km>
+    <km id="3">
+        <date>20250801</date>
+        <value>138230</value>
+    </km>
+    <km id="4">
+        <date>202511115</date>
+        <value>145344</value>
+    </km>
+    <km id="5">
+        <date>20260318</date>
+        <value>149447</value>
+    </km>
+</kilometers>

@@ -1,0 +1,27 @@
+<services>
+    <service id="1">
+        <type>small</type>
+        <km>136000</km>
+        <date>20250416</date>
+    </service>
+    <service id="2">
+        <type>tires</type>
+        <km>139000</km>
+        <date>20250712</date>
+    </service>
+    <service id="3">
+        <type>braking-system</type>
+        <km>144000</km>
+        <date>20250926</date>
+    </service>
+    <service id="4">
+        <type>battery</type>
+        <km>149000</km>
+        <date>20260107</date>
+    </service>
+    <service id="5">
+        <type>small</type>
+        <km>151000</km>
+        <date>20250421</date>
+    </service>
+</services>

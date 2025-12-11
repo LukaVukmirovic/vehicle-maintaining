@@ -1,0 +1,55 @@
+<expenses>
+    <month id="1">
+        <da-mo>202504</da-mo>
+        <expense>130</expense>
+    </month>
+    <month id="2">
+        <da-mo>202505</da-mo>
+        <expense>50</expense>
+    </month>
+    <month id="3">
+        <da-mo>202506</da-mo>
+        <expense>80</expense>
+    </month>
+    v
+    <month id="4">
+        <da-mo>202507</da-mo>
+        <expense>220</expense>
+    </month>
+    <month id="5">
+        <da-mo>202508</da-mo>
+        <expense>60</expense>
+    </month>
+    <month id="6">
+        <da-mo>202509</da-mo>
+        <expense>314</expense>
+    </month>
+    <month id="7">
+        <da-mo>202510</da-mo>
+        <expense>150</expense>
+    </month>
+    <month id="8">
+        <da-mo>2025011</da-mo>
+        <expense>46</expense>
+    </month>
+    <month id="9">
+        <da-mo>2025012</da-mo>
+        <expense>67</expense>
+    </month>
+    <month id="10">
+        <da-mo>202601</da-mo>
+        <expense>33</expense>
+    </month>
+    <month id="11">
+        <da-mo>202602</da-mo>
+        <expense>64</expense>
+    </month>
+    <month id="12">
+        <da-mo>202603</da-mo>
+        <expense>75</expense>
+    </month>
+    <month id="13">
+        <da-mo>202604</da-mo>
+        <expense>130</expense>
+    </month>
+</expenses>
