@@ -67,4 +67,64 @@
       :services (mapv ->service    (xml-children (str dir "/services.xml")))
       :expenses (mapv ->expense    (xml-children (str dir "/xpenses.xml")))})
 
-(defn -main [& args] (println "Vechile maintaining"))
+(defn vehicle-label [{:keys [brand model year]}]
+     (str brand " " model " (" year ")"))
+
+(defn current-km
+     [km-readings]
+     (loop [[r & more] km-readings
+            best 0]
+          (if (nil? r)
+               best
+               (recur more (max best (:km r))))))
+
+(defn km-driven
+     [{:keys [vehicle km]}]
+     (- (current-km km) (:start-km vehicle)))
+
+(defn total-expenses [expenses]
+     (loop [[e & more] expenses
+            sum 0]
+          (if (nil? e)
+               sum
+               (recur more (+ sum (:amount e))))))
+
+(defn average-expense [expenses]
+     (if (empty? expenses)
+          0
+          (/ (total-expenses expenses) (count expenses))))
+
+(defn add-service
+     ([db service] (add-service db service nil))
+     ([db service note]
+      (let [with-id (assoc service :id (inc (count (:services db))))
+            with-note (if note (assoc with-id :note note) with-id)]
+           (update db :services conj with-note))))
+
+(defn add-expense
+     [db month amount]
+     (update db :expenses conj {:id (inc (count (:expenses db)))
+                                :month month
+                                :amount amount}))
+
+(defn -main [& args]
+     (let [db (load-db "xml-data")
+           db (add-expense db "202605" 200)
+           expenses (:expenses db)]
+          (println "Vozilo:" (vehicle-label (:vehicle db)))
+          (println "Predjeno km:" (km-driven db))
+          (println "Ukupni troskovi:" (total-expenses expenses))
+          (println "Prosecan mesecni trosak:"
+                   (format "%.2f" (double (average-expense expenses))))))
+
+;;ispis pre dodavanja novog troska
+;;Vozilo: Toyota Corolla (2015)
+;;Predjeno km: 13447
+;;Ukupni troskovi: 1419
+;;Prosecan mesecni trosak: 109.15
+
+;;ispis posle dodavanja novog troska
+;;Vozilo: Toyota Corolla (2015)
+;;Predjeno km: 13447
+;;Ukupni troskovi: 1619
+;;Prosecan mesecni trosak: 115.64
