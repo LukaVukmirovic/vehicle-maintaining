@@ -1,5 +1,6 @@
 (ns vehicle-maintaining.core
-     (:require [clojure.xml :as xml])
+     (:require [clojure.xml :as xml]
+               [clojure.string :as str])
      (:gen-class))
 
 
@@ -27,7 +28,7 @@
 ;; github midje u redame ima uputstvo kako ga ubaciti
      )
 
-(def service-types #{:small :big :battery :breaking-system :tires})
+(def service-types #{:small :big :battery :braking-system :tires})
 
 (defn element->map
      [element]
@@ -71,23 +72,22 @@
      (str brand " " model " (" year ")"))
 
 (defn current-km
-     [km-readings]
-     (loop [[r & more] km-readings
-            best 0]
-          (if (nil? r)
-               best
-               (recur more (max best (:km r))))))
+     [kms]
+     (reduce max 0 kms))
+
+(defn all-kms
+     [{:keys [km services]}]
+     (concat (map :km km) (map :km services)))
 
 (defn km-driven
-     [{:keys [vehicle km]}]
-     (- (current-km km) (:start-km vehicle)))
+     [{:keys [vehicle] :as db}]
+     (- (current-km (all-kms db)) (:start-km vehicle)))
 
 (defn total-expenses [expenses]
-     (loop [[e & more] expenses
-            sum 0]
-          (if (nil? e)
-               sum
-               (recur more (+ sum (:amount e))))))
+     (reduce + 0 (map :amount expenses)))
+
+(defn next-id [coll]
+     (inc (reduce max 0 (map :id coll))))
 
 (defn average-expense [expenses]
      (if (empty? expenses)
@@ -97,34 +97,61 @@
 (defn add-service
      ([db service] (add-service db service nil))
      ([db service note]
-      (let [with-id (assoc service :id (inc (count (:services db))))
+      (let [with-id (assoc service :id (next-id (:services db)))
             with-note (if note (assoc with-id :note note) with-id)]
            (update db :services conj with-note))))
 
 (defn add-expense
      [db month amount]
-     (update db :expenses conj {:id (inc (count (:expenses db)))
+     (update db :expenses conj {:id (next-id (:expenses db))
                                 :month month
                                 :amount amount}))
+
+(defn last-service [services]
+     (last (sort-by :km services)))
+
+(defn top-expenses [expenses n]
+     (->> expenses
+          (sort-by :amount >)
+          (take n)))
+
+(defn year-expenses [expenses year]
+     (filter #(str/starts-with? (:month %) year) expenses))
+
+(defn types-services [services t]
+     (filter #(= t (:type %)) services))
+
+(defn had-service? [services t]
+                   (boolean (some #(= t (:type %)) services)))
 
 (defn -main [& args]
      (let [db (load-db "xml-data")
            db (add-expense db "202605" 200)
-           expenses (:expenses db)]
+           expenses (:expenses db)
+           services (:services db)]
           (println "Vozilo:" (vehicle-label (:vehicle db)))
           (println "Predjeno km:" (km-driven db))
           (println "Ukupni troskovi:" (total-expenses expenses))
           (println "Prosecan mesecni trosak:"
-                   (format "%.2f" (double (average-expense expenses))))))
+                   (format "%.2f" (double (average-expense expenses))))
+          (let [{:keys [type km]} (last-service services)]
+               (println "Poslednji servis:" type km "km"))
+          (println "Mali servisi:" (count (types-services services :small)))
+          (println "Troskovi 2025:" (total-expenses (year-expenses expenses "2025")))
+          (println "Troskovi 2026:" (total-expenses (year-expenses expenses "2026")))
+          (println "top 3 troska")
+          (doseq [{:keys [month amount]} (top-expenses expenses 3)]
+               (println " " month amount))))
 
-;;ispis pre dodavanja novog troska
 ;;Vozilo: Toyota Corolla (2015)
-;;Predjeno km: 13447
-;;Ukupni troskovi: 1419
-;;Prosecan mesecni trosak: 109.15
-
-;;ispis posle dodavanja novog troska
-;;Vozilo: Toyota Corolla (2015)
-;;Predjeno km: 13447
+;;Predjeno km: 15000
 ;;Ukupni troskovi: 1619
 ;;Prosecan mesecni trosak: 115.64
+;;Poslednji servis: :small 151000 km
+;;Mali servisi: 2
+;;Troskovi 2025: 1117
+;;Troskovi 2026: 502
+;;top 3 troska
+;;  202509 314
+;;  202507 220
+;;  202605 200
