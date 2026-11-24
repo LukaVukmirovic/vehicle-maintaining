@@ -60,12 +60,34 @@
 (defn xml-children [path]
      (map element->map (:content (xml/parse path))))
 
+(defn parse-csv [text]
+     (->> (str/split-lines text)
+          (drop 1)
+          (map #(str/split % #","))))
+
+(defn ->service-cost [[id cost parts]]
+     {:service-id (parse-long id)
+      :cost (parse-long cost)
+      :parts (str/split parts #";")})
+
+(defn load-service-cost [path]
+     (map ->service-cost (parse-csv (slurp path))))
+
+(defn index-by [k coll]
+     (into {} (map (juxt k identity) coll)))
+
+(defn attach-costs [services costs]
+     (let [by-id (index-by :service-id costs)]
+          (mapv #(merge % (select-keys (get by-id (:id %)) [:cost :parts]))
+                services)))
+
 (defn load-db
      "Učitava sve XML u db mapu."
      [dir]
      {:vehicle  (->vehicle (element->map (xml/parse (str dir "/vehicle.xml"))))
       :km       (mapv ->km-reading (xml-children (str dir "/km.xml")))
-      :services (mapv ->service    (xml-children (str dir "/services.xml")))
+      :services (attach-costs (mapv ->service    (xml-children (str dir "/services.xml")))
+                              (load-service-cost (str dir "/service-cost.csv")))
       :expenses (mapv ->expense    (xml-children (str dir "/xpenses.xml")))})
 
 (defn vehicle-label [{:keys [brand model year]}]
@@ -118,14 +140,31 @@
 (defn year-expenses [expenses year]
      (filter #(str/starts-with? (:month %) year) expenses))
 
-(defn types-services [services t]
-     (filter #(= t (:type %)) services))
-
 (defn had-service? [services t]
                    (boolean (some #(= t (:type %)) services)))
 
+(defn total-service-cost [services]
+     (apply + (map #(:cost % 0) services)))
+
+(defn total-cost [{:keys [expenses services]}]
+     (+ (total-expenses expenses) (total-service-cost services)))
+
+(defn service-type? [t service]
+     (= t (:type service)))
+
+(def small-service? (partial service-type? :small))
+
+(defn types-services [services t]
+     (filter (partial service-type? t) services))
+
+(def small-service-interval 10000)
+
+(defn next-small [services t interval]
+     (let [last-km (:km (last-service (types-services services t)))]
+          (rest (iterate #(+ % interval) last-km))))
+
 (defn -main [& args]
-     (let [db (load-db "xml-data")
+     (let [db (load-db "app-data")
            db (add-expense db "202605" 200)
            expenses (:expenses db)
            services (:services db)]
@@ -141,7 +180,13 @@
           (println "Troskovi 2026:" (total-expenses (year-expenses expenses "2026")))
           (println "top 3 troska")
           (doseq [{:keys [month amount]} (top-expenses expenses 3)]
-               (println " " month amount))))
+               (println " " month amount))
+          (println "Menjan akumulator:" (had-service? services :battery))
+          (println "zasebno troskovi servisa:" (total-service-cost services))
+          (println "ukupno mesecni + servisi" (total-cost db))
+          (println "broj servisa koji nisu mali:" (count (filter (complement small-service?) services)))
+          (println "sledeci mali servis na:" (take 1 (next-small services :small small-service-interval)))
+          (println "delovi na servisu 3:" (str/join ", " (:parts (get (index-by :id services) 3))))))
 
 ;;Vozilo: Toyota Corolla (2015)
 ;;Predjeno km: 15000
@@ -155,3 +200,9 @@
 ;;  202509 314
 ;;  202507 220
 ;;  202605 200
+;;Menjan akumulator: true
+;;zasebno troskovi servisa: 705
+;;ukupno mesecni + servisi 2324
+;;broj servisa koji nisu mali: 3
+;;sledeci mali servis na: (161000)
+;;delovi na servisu 3: plocice, diskovi
