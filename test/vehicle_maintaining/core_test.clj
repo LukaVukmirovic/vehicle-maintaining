@@ -118,3 +118,15 @@
          (:services db) => (n-of map? 5)
          (fact "svaki tip servisa iz XML-a postoji u service-types"
                (map :type (:services db)) => (has every? core/service-types))))
+
+(facts "check-expense-input"
+       (core/check-expense-input "202605" "200") => {:month "202605" :amount 200}
+       (core/check-expense-input "2026-05" "200") => (contains {:error string?})
+       (core/check-expense-input "202605" "abc")  => (contains {:error string?})
+       (core/check-expense-input "202605" "-5")   => (contains {:error string?})
+       (core/check-expense-input "2026O5" "200")  => (contains {:error string?}))
+
+;;vehicle-maintaining % lein midje
+;;WARNING: any? already refers to: #'clojure.core/any? in namespace: leiningen.midje, being replaced by: #'leiningen.midje/any?
+;;nil
+;;All checks (48) succeeded.
